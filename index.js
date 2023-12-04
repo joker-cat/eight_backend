@@ -139,20 +139,37 @@ function deleteOrderItem(orderId) {
 // 畫圖
 function circle(getData) {
     let allCategory = [];
+    let productCount = [];
+    let classification = [];
+    let idCount = [];
+    let frontThreeCount = 0;
     getData.forEach(e => allCategory.push(...e.products.map(c => c.category)));
-    let Classification = allCategory.reduce((acc, ipt) => {
-        ipt in acc ? acc[ipt] += 1 : acc[ipt] = 1;
-        return acc
-    }, {});
+    getData.forEach(e => productCount.push(...e.products.map(c => c.title)));
+    classification = calcCount(allCategory);
+    idCount = calcCount(productCount);
 
-    // console.log(Object.entries(Classification));
-    c3c3(Object.entries(Classification));
+    let sortFirstThree = Object
+        .entries(idCount)// 轉[[],[],[]]
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3)// 從第4個位置開始刪除到最後
+
+    sortFirstThree.forEach(e => frontThreeCount += e[1])// 前3個總合多少
+    sortFirstThree.splice(3, 0, ['其他', productCount.length - frontThreeCount]);// 在第4個位置插入新的元素 "其他"
+
+    c3c3(Object.entries(classification), sortFirstThree);
     return true
 }
 
-// c3
-function c3c3(arr) {
-    // C3.js
+//統計
+function calcCount(arr) {
+    return arr.reduce((acc, ipt) => {
+        ipt in acc ? acc[ipt] += 1 : acc[ipt] = 1;
+        return acc
+    }, {});
+}
+
+// C3.js
+function c3c3(arr, arr1) {
     let chart = c3.generate({
         bindto: '#chart', // HTML 元素綁定
         data: {
@@ -162,16 +179,21 @@ function c3c3(arr) {
                 "床架": "#DACBFF",
                 "收納": "#9D7FEA",
                 "窗簾": "#5434A7",
-                "其他": "#301E5F",
             }
+        },
+    });
+    let chart1 = c3.generate({
+        bindto: '#chart1', // HTML 元素綁定
+        data: {
+            type: "pie",
+            columns: [...arr1]
         },
     });
 }
 
 async function init() {
     const get = await getOrderList();
-    const drew = await circle(circleData);
-    (get === true && drew === true) ? console.log('初始化成功') : console.log('初始化失敗');
+    (get === true) ? console.log('初始化成功') : console.log('初始化失敗');
 }
 
 init();
